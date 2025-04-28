@@ -1,0 +1,167 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* No Man's Sky inspired color palette */
+    --background: 240 100% 6%;  /* Deep space blue */
+    --foreground: 220 25% 95%;
+    --card: 240 80% 8%;
+    --card-foreground: 220 25% 98%;
+    --popover: 240 80% 8%;
+    --popover-foreground: 220 25% 98%;
+    --primary: 175 100% 50%;  /* Teal accent */
+    --primary-foreground: 220 25% 98%;
+    --secondary: 320 100% 65%; /* Pink accent */
+    --secondary-foreground: 220 25% 98%;
+    --muted: 240 40% 15%;
+    --muted-foreground: 220 10% 70%;
+    --accent: 30 100% 60%;  /* Orange accent */
+    --accent-foreground: 220 25% 98%;
+    --destructive: 0 100% 60%;
+    --destructive-foreground: 220 25% 98%;
+    --border: 240 20% 20%;
+    --input: 240 20% 20%;
+    --ring: 175 100% 50%;
+    --chart-1: 175 100% 50%;
+    --chart-2: 320 100% 65%;
+    --chart-3: 30 100% 60%;
+    --chart-4: 260 100% 70%;
+    --chart-5: 190 100% 60%;
+    --sidebar-background: 240 100% 5%;
+    --sidebar-foreground: 220 25% 95%;
+    --sidebar-primary: 175 100% 50%;
+    --sidebar-primary-foreground: 220 25% 98%;
+    --sidebar-accent: 320 100% 65%;
+    --sidebar-accent-foreground: 220 25% 98%;
+    --sidebar-border: 240 20% 20%;
+    --sidebar-ring: 175 100% 50%;
+    
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html, body {
+    @apply overflow-hidden;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'Inter', sans-serif;
+  }
+  
+  #root {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+}
+
+/* NMS Hexagonal grid pattern */
+.hexgrid-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5.45L7.5 18.23v25.54L30 56.55l22.5-12.78V18.23L30 5.45zm0 4.73l18.75 10.65v21.35L30 52.83l-18.75-10.65V20.83L30 10.18z' fill='%230ff7e8' fill-opacity='0.07' fill-rule='evenodd'/%3E%3C/svg%3E");
+}
+
+/* Glowing text effect */
+.glow-text {
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.5), 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+.glow-text-pink {
+  text-shadow: 0 0 5px rgba(255, 0, 255, 0.5), 0 0 10px rgba(255, 0, 255, 0.3);
+}
+
+.glow-text-orange {
+  text-shadow: 0 0 5px rgba(255, 165, 0, 0.5), 0 0 10px rgba(255, 165, 0, 0.3);
+}
+
+/* Holographic card effect */
+.holographic-card {
+  background: linear-gradient(135deg, 
+    rgba(10, 10, 30, 0.8) 0%, 
+    rgba(20, 20, 50, 0.8) 50%, 
+    rgba(10, 10, 30, 0.8) 100%);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+  backdrop-filter: blur(5px);
+}
+
+/* Cosmic background animation */
+@keyframes cosmic-pulse {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.5; }
+}
+
+.cosmic-bg {
+  animation: cosmic-pulse 15s infinite ease-in-out;
+}
+
+/* Screen transitions */
+.screen-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.screen-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+.screen-transition-exit {
+  opacity: 1;
+}
+.screen-transition-exit-active {
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+/* 3D hover effect */
+.hover-3d {
+  transition: transform 0.2s ease-out;
+}
+.hover-3d:hover {
+  transform: translateY(-5px) scale(1.02);
+}
+
+/* Parallax layers */
+.parallax-bg-slow {
+  animation: parallax-slow 120s infinite linear;
+}
+.parallax-bg-medium {
+  animation: parallax-medium 80s infinite linear;
+}
+.parallax-bg-fast {
+  animation: parallax-fast 40s infinite linear;
+}
+
+@keyframes parallax-slow {
+  from { background-position: a0 0; }
+  to { background-position: 1000px 0; }
+}
+@keyframes parallax-medium {
+  from { background-position: 0 0; }
+  to { background-position: 2000px 0; }
+}
+@keyframes parallax-fast {
+  from { background-position: 0 0; }
+  to { background-position: 3000px 0; }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(10, 10, 30, 0.8);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 255, 0.4);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 255, 0.7);
+}
