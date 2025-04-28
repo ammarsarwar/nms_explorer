@@ -308,24 +308,19 @@ export default function GalaxyMap() {
                 system.id === selectedSystem ? 1 : 0.7, 
                 16, 16
               ]} />
-              <meshBasicMaterial 
+              <meshStandardMaterial 
                 color={system.starColor}
+                emissive={system.starColor}
+                emissiveIntensity={2}
               />
             </mesh>
             
             {/* Glow effect */}
-            <sprite scale={[
-              system.id === selectedSystem ? 4 : 2, 
-              system.id === selectedSystem ? 4 : 2, 
-              1
-            ]}>
-              <spriteMaterial
-                color={system.starColor}
-                transparent
-                opacity={0.7}
-                blending={THREE.AdditiveBlending}
-              />
-            </sprite>
+            <pointLight 
+              color={system.starColor} 
+              intensity={0.5} 
+              distance={5} 
+            />
             
             {/* Selection indicator */}
             {(system.id === selectedSystem || system.id === hovered) && (
