@@ -1342,6 +1342,10 @@ export default function PlanetViewer() {
             bumpScale={0.1}
             roughness={0.8}
             metalness={0.1}
+            onUpdate={self => {
+              // Ensure material updates properly
+              self.needsUpdate = true;
+            }}
           />
         </mesh>
         
@@ -1355,6 +1359,10 @@ export default function PlanetViewer() {
               side={THREE.DoubleSide}
               opacity={0.9}
               depthWrite={false}
+              onUpdate={self => {
+                // Ensure material updates properly
+                self.needsUpdate = true;
+              }}
             />
           </mesh>
         )}
@@ -1368,6 +1376,10 @@ export default function PlanetViewer() {
             opacity={0.8}
             side={THREE.DoubleSide}
             depthWrite={false}
+            onUpdate={self => {
+              // Ensure material updates properly
+              self.needsUpdate = true;
+            }}
           />
         </mesh>
         
@@ -1375,11 +1387,15 @@ export default function PlanetViewer() {
         <mesh ref={atmosphereRef} scale={1.1}>
           <sphereGeometry args={[1, 32, 32]} />
           <meshStandardMaterial 
-            color={atmosphereParams.color}
+            color={atmosphereParams.color || "#ffffff"}
             transparent={true}
-            opacity={atmosphereParams.strength}
+            opacity={atmosphereParams.strength || 0.1}
             side={THREE.BackSide}
             depthWrite={false}
+            onUpdate={self => {
+              // Ensure material updates properly
+              self.needsUpdate = true;
+            }}
           />
         </mesh>
         
