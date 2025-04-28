@@ -52,8 +52,9 @@ export default function PlanetViewer() {
     
     // Create a canvas to generate the texture
     const canvas = document.createElement('canvas');
-    canvas.width = 2048; // Higher resolution for better detail
-    canvas.height = 1024;
+    // Reduced resolution for better performance
+    canvas.width = 512; 
+    canvas.height = 256;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
     
@@ -132,8 +133,9 @@ export default function PlanetViewer() {
         // Earth-like planet with continents and oceans
         
         // Generate base terrain noise 
-        const continentNoise = generateNoise(4, 6, 0.65);
-        const detailNoise = generateNoise(8, 4, 0.5);
+        // Reduced complexity for better performance
+        const continentNoise = generateNoise(4, 3, 0.65);
+        const detailNoise = generateNoise(6, 2, 0.5);
         
         // Create the image data
         const imageData = ctx.createImageData(canvas.width, canvas.height);
@@ -236,8 +238,9 @@ export default function PlanetViewer() {
         // Neptune or water world
         
         // Generate base ocean noise
-        const oceanNoise = generateNoise(5, 4, 0.7);
-        const waveNoise = generateNoise(12, 2, 0.8);
+        // Reduced complexity for better performance
+        const oceanNoise = generateNoise(4, 2, 0.7);
+        const waveNoise = generateNoise(8, 1, 0.8);
         
         // Create image data
         const imageData = ctx.createImageData(canvas.width, canvas.height);
@@ -324,8 +327,9 @@ export default function PlanetViewer() {
         // Mars-like desert planet
         
         // Generate base terrain noise
-        const terrainNoise = generateNoise(6, 5, 0.6);
-        const craterNoise = generateNoise(10, 3, 0.5);
+        // Reduced complexity for better performance
+        const terrainNoise = generateNoise(4, 2, 0.6);
+        const craterNoise = generateNoise(6, 2, 0.5);
         
         // Create image data
         const imageData = ctx.createImageData(canvas.width, canvas.height);
@@ -927,13 +931,16 @@ export default function PlanetViewer() {
       }
     }
     
-    // Add general noise to all planet types
+    // Add more controlled, subtle noise to all planet types
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
     
+    // Create subtle noise without white spots
     for (let i = 0; i < data.length; i += 4) {
-      // Add some noise to the texture
-      const noise = (Math.random() - 0.5) * 20;
+      // Make a much smaller, consistent noise (no white spots)
+      const noise = (random() - 0.5) * 8;
+      
+      // Apply noise consistently to maintain color relationships
       data[i] = Math.min(255, Math.max(0, data[i] + noise));
       data[i+1] = Math.min(255, Math.max(0, data[i+1] + noise));
       data[i+2] = Math.min(255, Math.max(0, data[i+2] + noise));
@@ -1168,6 +1175,108 @@ export default function PlanetViewer() {
     return { color: color.getStyle(), strength };
   }, [currentPlanet]);
   
+  // Rings texture generation for Saturn-like planets
+  const ringTexture = useMemo(() => {
+    if (!currentPlanet) return null;
+    
+    // Only exotic and some of the barren/anomalous planets have rings
+    const hasRings = 
+      currentPlanet.type === 'Exotic' || 
+      (currentPlanet.type === 'Anomalous' && (currentPlanet.seed % 3 === 0)) || 
+      (currentPlanet.type === 'Barren' && (currentPlanet.seed % 5 === 0));
+      
+    if (!hasRings) return null;
+    
+    // Create a canvas for the rings
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    
+    // Fill with transparent initially
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Seed for consistent ring generation
+    const random = () => {
+      const x = Math.sin(currentPlanet.seed++) * 10000;
+      return x - Math.floor(x);
+    };
+    
+    // Start with inner ring gap
+    let position = 0;
+    const innerGap = canvas.width * 0.2;
+    
+    // Draw multiple ring bands with different colors and densities
+    while (position < canvas.width) {
+      // Skip the inner gap
+      if (position < innerGap) {
+        position += 10;
+        continue;
+      }
+      
+      // Determine ring band width
+      const bandWidth = 20 + random() * 80;
+      
+      // Determine ring color (based on planet type)
+      let ringColor;
+      if (currentPlanet.type === 'Exotic') {
+        // More colorful rings for exotic planets
+        const hue = (random() * 60 + 20) % 360; // Warm colors like Saturn
+        ringColor = `hsl(${hue}, ${50 + random() * 30}%, ${40 + random() * 40}%)`;
+      } else {
+        // Grey/white rings for normal planets
+        const lightness = 50 + random() * 40;
+        ringColor = `rgb(${lightness}%, ${lightness}%, ${lightness}%)`;
+      }
+      
+      // Determine opacity of the band (gaps between dense rings)
+      const opacity = 0.1 + random() * 0.6;
+      
+      // Draw the band
+      ctx.fillStyle = ringColor;
+      ctx.globalAlpha = opacity;
+      ctx.fillRect(position, 0, bandWidth, canvas.height);
+      
+      // Add detail lines within the band
+      const lineCount = Math.floor(random() * 10) + 5;
+      for (let i = 0; i < lineCount; i++) {
+        const linePos = position + random() * bandWidth;
+        const lineWidth = 1 + random() * 3;
+        ctx.globalAlpha = 0.5 + random() * 0.5;
+        ctx.fillRect(linePos, 0, lineWidth, canvas.height);
+      }
+      
+      // Move to next band position
+      position += bandWidth;
+      
+      // Sometimes add gaps between ring bands
+      if (random() > 0.7) {
+        position += 5 + random() * 30;
+      }
+    }
+    
+    // Create texture from canvas
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    return texture;
+  }, [currentPlanet]);
+  
+  // Determine if the planet has rings
+  const hasRings = useMemo(() => {
+    if (!currentPlanet) return false;
+    
+    return (
+      currentPlanet.type === 'Exotic' || 
+      (currentPlanet.type === 'Anomalous' && (currentPlanet.seed % 3 === 0)) || 
+      (currentPlanet.type === 'Barren' && (currentPlanet.seed % 5 === 0))
+    );
+  }, [currentPlanet]);
+  
+  // Ring reference for animation
+  const ringsRef = useRef<THREE.Mesh>(null);
+  
   // Planet animation
   useFrame((_, delta) => {
     if (planetGroup.current) {
@@ -1178,6 +1287,11 @@ export default function PlanetViewer() {
     if (cloudRef.current) {
       // Rotate clouds at a different speed for effect
       cloudRef.current.rotation.y += 0.08 * delta;
+    }
+    
+    if (ringsRef.current) {
+      // Keep rings tilted but not rotating with the planet
+      ringsRef.current.rotation.x = 0.3; // Tilt rings slightly
     }
     
     // Handle keyboard controls for camera movement
@@ -1231,6 +1345,20 @@ export default function PlanetViewer() {
           />
         </mesh>
         
+        {/* Saturn-like ring system for certain planets */}
+        {hasRings && ringTexture && (
+          <mesh ref={ringsRef} rotation={[0.3, 0, 0]} scale={[2.5, 2.5, 2.5]}>
+            <ringGeometry args={[1.2, 2.0, 128]} />
+            <meshStandardMaterial 
+              map={ringTexture}
+              transparent={true}
+              side={THREE.DoubleSide}
+              opacity={0.9}
+              depthWrite={false}
+            />
+          </mesh>
+        )}
+        
         {/* Cloud layer */}
         <mesh ref={cloudRef} scale={1.02}>
           <sphereGeometry args={[1, 32, 32]} />
@@ -1266,6 +1394,7 @@ export default function PlanetViewer() {
           outlineColor="rgba(0,0,0,0.5)"
         >
           {currentPlanet.name}
+          {hasRings && " ♅"}
         </Text>
       </group>
     </>
