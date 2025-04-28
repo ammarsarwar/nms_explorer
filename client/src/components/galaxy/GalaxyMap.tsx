@@ -6,7 +6,8 @@ import {
   useKeyboardControls, 
   useHelper, 
   OrbitControls,
-  Billboard
+  Billboard,
+  Stars
 } from '@react-three/drei';
 import { useGalaxy } from '@/lib/stores/useGalaxy';
 import { usePlanet } from '@/lib/stores/usePlanet';
@@ -298,28 +299,39 @@ export default function GalaxyMap() {
         {/* Star systems */}
         {systems.map((system) => (
           <group key={system.id} position={system.position as any}>
-            {/* Star */}
+            {/* Star core */}
             <mesh
               onClick={() => setSelectedSystem(system.id)}
               onPointerOver={() => setHovered(system.id)}
               onPointerOut={() => setHovered(null)}
             >
               <sphereGeometry args={[
-                system.id === selectedSystem ? 1 : 0.7, 
+                system.id === selectedSystem ? 0.8 : 0.5, 
                 16, 16
               ]} />
-              <meshStandardMaterial 
+              <meshBasicMaterial 
                 color={system.starColor}
-                emissive={system.starColor}
-                emissiveIntensity={2}
               />
             </mesh>
             
-            {/* Glow effect */}
-            <pointLight 
-              color={system.starColor} 
-              intensity={0.5} 
-              distance={5} 
+            {/* Star glow */}
+            <mesh>
+              <sphereGeometry args={[
+                system.id === selectedSystem ? 1.2 : 0.9,
+                16, 16
+              ]} />
+              <meshBasicMaterial
+                color={system.starColor}
+                transparent
+                opacity={0.3}
+              />
+            </mesh>
+            
+            {/* Ambient light for each star */}
+            <pointLight
+              color={system.starColor}
+              intensity={0.8}
+              distance={8}
             />
             
             {/* Selection indicator */}

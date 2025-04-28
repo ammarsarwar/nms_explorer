@@ -895,6 +895,44 @@ export class ProcGen {
     };
   }
   
+  // Function to generate a galaxy name
+  public static generateGalaxyName(seed: number): string {
+    const random = this.seededRandom(seed);
+    
+    const prefixes = [
+      'Andromeda', 'Euclid', 'Hilbert', 'Calypso', 'Budullangr', 
+      'Eissentam', 'Elkupalos', 'Aptarkaba', 'Ontiniangp', 'Muhacksonto',
+      'Hicanpaav', 'Urastrykle', 'Isdoraijung', 'Nepitzaspru', 'Xobeurindj',
+      'Owijalya', 'Rinblodesa', 'Loychazinq', 'Zalienkosm', 'Ladgudiraf',
+      'Mushonponte', 'Kivkcapen', 'Onyematad', 'Wucetosucc', 'Ebyeloofdud',
+      'Odyavanta', 'Milekistri', 'Waferganh', 'Agnusopwit', 'Teyaypilny'
+    ];
+    
+    const suffixes = [
+      'Cluster', 'Expanse', 'Dimension', 'Galaxy', 'Major', 'Minor', 
+      'Cloud', 'Nexus', 'Prime', 'Sector', 'Quadrant', 'Realm',
+      'Void', 'Haven', 'Reach'
+    ];
+    
+    // 30% chance of a number in the name
+    let number = '';
+    if (random() < 0.3) {
+      number = ` ${Math.floor(random() * 9) + 1}`;
+    }
+    
+    // Random name generation
+    if (random() < 0.7) {
+      // 70% chance of prefix-suffix pattern
+      const prefix = this.pickRandom(prefixes, random);
+      const suffix = this.pickRandom(suffixes, random);
+      return `${prefix}${number} ${suffix}`;
+    } else {
+      // 30% chance of just a prefix
+      const prefix = this.pickRandom(prefixes, random);
+      return `${prefix}${number}`;
+    }
+  }
+
   // Function to generate a galaxy
   public static generateGalaxy(seed: number, systemCount: number): any[] {
     const systems = [];
