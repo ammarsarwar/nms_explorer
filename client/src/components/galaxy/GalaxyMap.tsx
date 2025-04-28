@@ -88,9 +88,6 @@ export default function GalaxyMap() {
         const target = new THREE.Vector3(system.position[0], system.position[1], system.position[2]);
         camera.position.set(target.x + 5, target.y + 20, target.z + 5);
         camera.lookAt(target);
-        
-        // Play selection sound
-        playSuccess();
       }
     }
   }, [selectedSystem, systems.length]);
@@ -488,18 +485,7 @@ export default function GalaxyMap() {
     if (zoomOut) camera.position.y += 1;
   });
   
-  // Update selection highlight
-  useEffect(() => {
-    if (hoveredSystem !== null) {
-      playHit();
-    }
-  }, [hoveredSystem]);
-  
-  useEffect(() => {
-    if (hoveredPlanet !== null) {
-      playHit();
-    }
-  }, [hoveredPlanet]);
+  // Previously had audio effects on hover, now removed
 
   // Create black hole event horizon texture
   const blackHoleTexture = useMemo(() => {
@@ -950,7 +936,7 @@ export default function GalaxyMap() {
               setSystemViewMode(false);
               setSelectedSystem(null)
             }}
-            onPointerOver={() => playHit()}
+            onPointerOver={() => {}}
           >
             <mesh>
               <planeGeometry args={[3, 0.8]} />
@@ -1067,7 +1053,7 @@ export default function GalaxyMap() {
       <Billboard position={[0, -15, 0]}>
         <group
           onClick={() => setShowHyperdrive(true)}
-          onPointerOver={() => playHit()}
+          onPointerOver={() => {}}
         >
           <mesh>
             <planeGeometry args={[8, 1.2]} />
