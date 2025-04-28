@@ -1,74 +1,127 @@
 import { create } from "zustand";
+import { Howl, Howler } from 'howler';
+
+// Load and configure sounds
+let backgroundMusic: Howl | null = null; 
+let hitSound: Howl | null = null;
+let successSound: Howl | null = null;
+let explorationSound: Howl | null = null;
+
+// Preload sounds - we'll do this outside to avoid duplicate sounds
+try {
+  backgroundMusic = new Howl({
+    src: ['/sounds/ambient.mp3'],
+    loop: true,
+    volume: 0.3,
+    autoplay: false
+  });
+  
+  hitSound = new Howl({
+    src: ['/sounds/hit.mp3'],
+    volume: 0.5
+  });
+  
+  successSound = new Howl({
+    src: ['/sounds/success.mp3'],
+    volume: 0.6
+  });
+  
+  explorationSound = new Howl({
+    src: ['/sounds/exploration.mp3'],
+    volume: 0.5
+  });
+  
+  console.log("Audio files loaded successfully");
+} catch (error) {
+  console.error("Failed to load audio files:", error);
+}
 
 interface AudioState {
-  backgroundMusic: HTMLAudioElement | null;
-  hitSound: HTMLAudioElement | null;
-  successSound: HTMLAudioElement | null;
   isMuted: boolean;
-  
-  // Setter functions
-  setBackgroundMusic: (music: HTMLAudioElement) => void;
-  setHitSound: (sound: HTMLAudioElement) => void;
-  setSuccessSound: (sound: HTMLAudioElement) => void;
+  isMusicPlaying: boolean;
   
   // Control functions
   toggleMute: () => void;
   playHit: () => void;
   playSuccess: () => void;
+  playExploration: () => void;
+  playBackgroundMusic: () => void;
+  stopBackgroundMusic: () => void;
 }
 
 export const useAudio = create<AudioState>((set, get) => ({
-  backgroundMusic: null,
-  hitSound: null,
-  successSound: null,
-  isMuted: true, // Start muted by default
-  
-  setBackgroundMusic: (music) => set({ backgroundMusic: music }),
-  setHitSound: (sound) => set({ hitSound: sound }),
-  setSuccessSound: (sound) => set({ successSound: sound }),
+  isMuted: false, // Start unmuted to allow sound
+  isMusicPlaying: false,
   
   toggleMute: () => {
-    const { isMuted } = get();
+    const { isMuted, isMusicPlaying, stopBackgroundMusic, playBackgroundMusic } = get();
     const newMutedState = !isMuted;
     
-    // Just update the muted state
+    // Update the muted state
     set({ isMuted: newMutedState });
+    
+    // Handle global mute
+    Howler.mute(newMutedState);
+    
+    // Special handling for background music
+    if (newMutedState) {
+      if (backgroundMusic && isMusicPlaying) {
+        backgroundMusic.pause();
+      }
+    } else {
+      // If unmuting and music was playing, restart it
+      if (isMusicPlaying && backgroundMusic) {
+        backgroundMusic.play();
+      }
+    }
     
     // Log the change
     console.log(`Sound ${newMutedState ? 'muted' : 'unmuted'}`);
   },
   
   playHit: () => {
-    const { hitSound, isMuted } = get();
-    if (hitSound) {
-      // If sound is muted, don't play anything
-      if (isMuted) {
-        console.log("Hit sound skipped (muted)");
-        return;
-      }
-      
-      // Clone the sound to allow overlapping playback
-      const soundClone = hitSound.cloneNode() as HTMLAudioElement;
-      soundClone.volume = 0.3;
-      soundClone.play().catch(error => {
-        console.log("Hit sound play prevented:", error);
-      });
-    }
+    const { isMuted } = get();
+    if (isMuted || !hitSound) return;
+    
+    hitSound.play();
   },
   
   playSuccess: () => {
-    const { successSound, isMuted } = get();
-    if (successSound) {
-      // If sound is muted, don't play anything
-      if (isMuted) {
-        console.log("Success sound skipped (muted)");
-        return;
-      }
-      
-      successSound.currentTime = 0;
-      successSound.play().catch(error => {
-        console.log("Success sound play prevented:", error);
-      });
+    const { isMuted } = get();
+    if (isMuted || !successSound) return;
+    
+    successSound.play();
+  },
+  
+  playExploration: () => {
+    const { isMuted } = get();
+    if (isMuted || !explorationSound) return;
+    
+    explorationSound.play();
+  },
+  
+  playBackgroundMusic: () => {
+    const { isMuted, isMusicPlaying } = get();
+    
+    if (isMusicPlaying || !backgroundMusic) return;
+    
+    if (!isMuted) {
+      backgroundMusic.play();
     }
+    
+    set({ isMusicPlaying: true });
+  },
+  
+  stopBackgroundMusic: () => {
+    if (backgroundMusic) {
+      backgroundMusic.pause();
+    }
+    set({ isMusicPlaying: false });
   }
 }));
+
+// Start background music on load
+setTimeout(() => {
+  const { playBackgroundMusic } = useAudio.getState();
+  playBackgroundMusic();
+}, 1000);

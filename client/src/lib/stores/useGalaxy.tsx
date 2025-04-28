@@ -27,6 +27,7 @@ export interface StarSystem {
   planetCount: number;  // Number of planets
   discovered: boolean;
   seed: number;
+  hasBlackHole?: boolean; // Indicates if this system contains a black hole
 }
 
 interface GalaxyState {
@@ -85,9 +86,25 @@ export const useGalaxy = create<GalaxyState>((set, get) => ({
       // Generate planets for each star system
       const starSystems: StarSystem[] = [];
       
+      // Determine which systems will have black holes (approximately half)
+      // Using the galaxy seed to ensure consistency
+      const galaxyRng = (seed: number) => {
+        const x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+      };
+      
+      // Create a map of system IDs to black hole status
+      const blackHoleSystems = new Map<string, boolean>();
+      for (const systemData of starSystemsData) {
+        // Use system seed + galaxy seed to determine if this system has a black hole
+        const hasBlackHole = galaxyRng(systemData.seed + galaxySeed) < 0.5;
+        blackHoleSystems.set(systemData.id, hasBlackHole);
+      }
+      
       for (const systemData of starSystemsData) {
         const planetCount = systemData.planets;
         const planetList: Planet[] = [];
+        const hasBlackHole = blackHoleSystems.get(systemData.id) || false;
         
         // Generate planets for this star system
         for (let i = 0; i < planetCount; i++) {
@@ -98,11 +115,13 @@ export const useGalaxy = create<GalaxyState>((set, get) => ({
           const planetData = ProcGen.generatePlanet(planetSeed);
           
           // Calculate orbit radius (distance from star)
-          const minOrbitRadius = 3; // Minimum distance from star
+          // If the system has a black hole, planets orbit further out
+          const minOrbitRadius = hasBlackHole ? 5 : 3; // Black holes need more distance
           const orbitRadius = minOrbitRadius + i * 2.5; // Each planet further out
           
-          // Calculate orbit speed (further planets orbit slower)
-          const orbitSpeed = 0.2 / Math.sqrt(orbitRadius); 
+          // Calculate orbit speed (further planets orbit slower, black holes have faster orbits)
+          const orbitSpeedFactor = hasBlackHole ? 0.3 : 0.2; // Faster around black holes
+          const orbitSpeed = orbitSpeedFactor / Math.sqrt(orbitRadius); 
           
           // Calculate rotation speed
           const rotationSpeed = 0.2 + Math.random() * 0.3;
@@ -136,8 +155,14 @@ export const useGalaxy = create<GalaxyState>((set, get) => ({
           ...systemData,
           planetList,
           planetCount,
-          seed: systemData.seed
+          seed: systemData.seed,
+          hasBlackHole // Add black hole flag
         };
+        
+        // Log black hole systems
+        if (hasBlackHole) {
+          console.log(`Black hole detected in system: ${starSystem.name}`);
+        }
         
         starSystems.push(starSystem);
       }

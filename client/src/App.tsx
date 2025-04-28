@@ -48,25 +48,13 @@ function App() {
   const [showCanvas, setShowCanvas] = useState(false);
   const [activeScreen, setActiveScreen] = useState<'planet' | 'galaxy' | 'resources' | 'discovery'>('planet');
   const [isLoading, setIsLoading] = useState(true);
-  const { setBackgroundMusic } = useAudio();
+  const { playBackgroundMusic } = useAudio();
   const { currentPlanet, generateNewPlanet } = usePlanet();
   const { initializeGalaxy } = useGalaxy();
 
-  // Initialize audio
+  // Initialize game
   useEffect(() => {
-    const bgMusic = new Audio('/sounds/ambient.mp3');
-    bgMusic.loop = true;
-    bgMusic.volume = 0.4;
-    setBackgroundMusic(bgMusic);
-    
-    // Initialize hit sound
-    const hitSound = new Audio('/sounds/hit.mp3');
-    hitSound.volume = 0.3;
-    
-    // Initialize success sound
-    const successSound = new Audio('/sounds/success.mp3');
-    successSound.volume = 0.2;
-    
+    // Audio is now initialized in the useAudio store with Howler
     setShowCanvas(true);
     
     // Initialize game data
