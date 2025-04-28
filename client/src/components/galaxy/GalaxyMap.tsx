@@ -38,7 +38,7 @@ export default function GalaxyMap() {
   } = useGalaxy();
   
   const { generateNewPlanet } = usePlanet();
-  const { playHit, playSuccess } = useAudio();
+  // Removed audio references
   
   const [hoveredSystem, setHoveredSystem] = useState<string | null>(null);
   const [hoveredPlanet, setHoveredPlanet] = useState<string | null>(null);

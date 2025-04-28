@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useGalaxy } from '@/lib/stores/useGalaxy';
-import { useAudio } from '@/lib/stores/useAudio';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { 
@@ -20,7 +19,6 @@ interface HyperdriveMiniGameProps {
 
 export default function HyperdriveMiniGame({ onClose }: HyperdriveMiniGameProps) {
   const { hyperfuel, addHyperfuel, availableGalaxies, currentGalaxy, travelToGalaxy } = useGalaxy();
-  const { playHit, playSuccess } = useAudio();
   
   const [gameState, setGameState] = useState<'intro' | 'playing' | 'success' | 'failed'>('intro');
   const [targetPosition, setTargetPosition] = useState({ x: 50, y: 50 });
@@ -81,7 +79,6 @@ export default function HyperdriveMiniGame({ onClose }: HyperdriveMiniGameProps)
     if (distance < 5) {
       if (!targetLocked) {
         setTargetLocked(true);
-        playSuccess();
         
         // Award fuel based on stability
         const fuelEarned = Math.floor(stability / 10);
@@ -104,7 +101,6 @@ export default function HyperdriveMiniGame({ onClose }: HyperdriveMiniGameProps)
     } else if (targetLocked) {
       // Lost target lock
       setTargetLocked(false);
-      playHit();
       clearInterval(timerRef.current!);
     }
   };
@@ -118,10 +114,8 @@ export default function HyperdriveMiniGame({ onClose }: HyperdriveMiniGameProps)
       // Slight delay to update fuel count
       setTimeout(() => {
         if (travelToGalaxy(selectedGalaxy)) {
-          playSuccess();
           onClose();
         } else {
-          playHit();
           // Not enough fuel
           setGameState('failed');
         }
@@ -169,7 +163,6 @@ export default function HyperdriveMiniGame({ onClose }: HyperdriveMiniGameProps)
                     disabled={galaxy.id === currentGalaxy}
                     onClick={() => {
                       setSelectedGalaxy(galaxy.id);
-                      playHit();
                     }}
                   >
                     <span>{galaxy.name}</span>
