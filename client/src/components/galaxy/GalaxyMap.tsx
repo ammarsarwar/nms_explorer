@@ -99,7 +99,7 @@ export default function GalaxyMap() {
       if (hoveredSystem) {
         setSelectedSystem(hoveredSystem);
         generateNewPlanet();
-      } else if (hoveredPlanet) {
+      } else if (hoveredPlanet && hoveredPlanet !== null) {
         setSelectedPlanet(hoveredPlanet);
         enterPlanetView();
       }
@@ -450,7 +450,7 @@ export default function GalaxyMap() {
           <group 
             onClick={() => {
               setSystemViewMode(false);
-              setSelectedSystem(null);
+              setSelectedSystem(null)
             }}
             onPointerOver={() => playHit()}
           >

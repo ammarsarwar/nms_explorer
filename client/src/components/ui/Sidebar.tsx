@@ -203,7 +203,7 @@ export default function Sidebar({ activeScreen, setActiveScreen }: SidebarProps)
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Planets:</span>
-                      <span>{systems.find(s => s.id === selectedSystem)?.planets}</span>
+                      <span>{systems.find(s => s.id === selectedSystem)?.planetCount}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Status:</span>

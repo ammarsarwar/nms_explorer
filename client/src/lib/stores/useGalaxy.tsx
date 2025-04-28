@@ -41,7 +41,7 @@ interface GalaxyState {
   
   // Core functions
   initializeGalaxy: () => Promise<StarSystem[]>;
-  setSelectedSystem: (systemId: string) => void;
+  setSelectedSystem: (systemId: string | null) => void;
   setSelectedPlanet: (planetId: string | null) => void;
   discoverSystem: (systemId: string) => void;
   discoverPlanet: (planetId: string) => void;
@@ -160,7 +160,7 @@ export const useGalaxy = create<GalaxyState>((set, get) => ({
     }
   },
   
-  setSelectedSystem: (systemId: string) => {
+  setSelectedSystem: (systemId: string | null) => {
     set({ 
       selectedSystem: systemId,
       selectedPlanet: null,
