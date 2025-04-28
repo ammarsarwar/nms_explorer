@@ -1,5 +1,5 @@
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, createContext } from "react";
 import { KeyboardControls } from "@react-three/drei";
 import { useAudio } from "./lib/stores/useAudio";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -76,6 +76,9 @@ function App() {
       <div className="w-screen h-screen overflow-hidden bg-background relative">
         <StarField />
         
+        {/* Show Hyperdrive outside of the canvas */}
+        {showHyperdrive && <HyperdriveMiniGame onClose={() => setShowHyperdrive(false)} />}
+        
         {showCanvas && (
           <KeyboardControls map={controls}>
             <div className="flex flex-col h-full w-full">
@@ -109,7 +112,7 @@ function App() {
                       )}
                       
                       {activeScreen === 'galaxy' && (
-                        <div className="h-full w-full">
+                        <div className="h-full w-full relative">
                           <Canvas
                             camera={{ position: [0, 20, 0], fov: 60 }}
                             gl={{ antialias: true, alpha: true }}
@@ -119,6 +122,16 @@ function App() {
                               <GalaxyMap />
                             </Suspense>
                           </Canvas>
+                          
+                          {/* External Hyperdrive button outside the 3D scene */}
+                          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+                            <button 
+                              className="bg-purple-900/80 hover:bg-purple-700 text-pink-200 py-2 px-6 rounded-lg shadow-lg border border-pink-400/30"
+                              onClick={() => setShowHyperdrive(true)}
+                            >
+                              Activate Hyperdrive
+                            </button>
+                          </div>
                         </div>
                       )}
                       

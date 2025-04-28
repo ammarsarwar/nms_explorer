@@ -44,7 +44,6 @@ export default function GalaxyMap() {
   const [hoveredPlanet, setHoveredPlanet] = useState<string | null>(null);
   const [galaxyRotation, setGalaxyRotation] = useState(0);
   const [systemViewMode, setSystemViewMode] = useState(false);
-  const [showHyperdrive, setShowHyperdrive] = useState(false);
   
   const galaxyRef = useRef<THREE.Group>(null);
   const systemRef = useRef<THREE.Group>(null);
@@ -1049,26 +1048,7 @@ export default function GalaxyMap() {
         </group>
       )}
       
-      {/* Hyperdrive mini-game button */}
-      <Billboard position={[0, -15, 0]}>
-        <group
-          onClick={() => setShowHyperdrive(true)}
-          onPointerOver={() => {}}
-        >
-          <mesh>
-            <planeGeometry args={[8, 1.2]} />
-            <meshBasicMaterial color="#551144" />
-          </mesh>
-          <Text
-            fontSize={0.5}
-            color="#ffaaff"
-            anchorX="center"
-            anchorY="middle"
-          >
-            Activate Hyperdrive
-          </Text>
-        </group>
-      </Billboard>
+      {/* Hyperdrive activated via external button */}
       
       {/* HTML components shouldn't be inside the Three.js scene */}
     </>
