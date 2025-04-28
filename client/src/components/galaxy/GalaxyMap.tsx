@@ -11,7 +11,7 @@ import {
 import { useGalaxy, StarSystem, Planet } from '@/lib/stores/useGalaxy';
 import { usePlanet } from '@/lib/stores/usePlanet';
 import { useAudio } from '@/lib/stores/useAudio';
-import HyperdriveMiniGame from '@/components/minigames/HyperdriveMiniGame';
+
 
 enum Controls {
   forward = 'forward',
