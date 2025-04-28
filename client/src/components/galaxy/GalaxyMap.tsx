@@ -70,30 +70,17 @@ export default function GalaxyMap() {
     }
   }, [interact]);
   
-  // Create star particles for the galaxy background
-  const starfieldParticles = useMemo(() => {
-    const particlesCount = 2000;
-    const positions = new Float32Array(particlesCount * 3);
-    const colors = new Float32Array(particlesCount * 3);
-    const sizes = new Float32Array(particlesCount);
-    
-    for (let i = 0; i < particlesCount; i++) {
-      // Random position across a larger area
-      const i3 = i * 3;
-      positions[i3] = (Math.random() - 0.5) * 500;
-      positions[i3 + 1] = (Math.random() - 0.5) * 500;
-      positions[i3 + 2] = (Math.random() - 0.5) * 500;
-      
-      // Colors - mostly white/blue with some variation
-      colors[i3] = 0.8 + Math.random() * 0.2;
-      colors[i3 + 1] = 0.8 + Math.random() * 0.2;
-      colors[i3 + 2] = 0.9 + Math.random() * 0.1;
-      
-      // Random sizes
-      sizes[i] = Math.random() * 2;
-    }
-    
-    return { positions, colors, sizes };
+  // Background stars
+  const renderStarfield = useMemo(() => {
+    return (
+      <Stars 
+        radius={100}
+        depth={50}
+        count={5000}
+        factor={4}
+        saturation={0.5}
+      />
+    );
   }, []);
   
   // Create galaxy center glow
@@ -126,45 +113,6 @@ export default function GalaxyMap() {
     }
   }, []);
   
-  // Spiral arms geometry
-  const spiralArms = useMemo(() => {
-    const count = 800;
-    const positions = new Float32Array(count * 3);
-    const colors = new Float32Array(count * 3);
-    const sizes = new Float32Array(count);
-    
-    // Create spiral arms dust
-    const arms = 2; // Number of spiral arms
-    const armAngle = 2 * Math.PI / arms;
-    
-    for (let i = 0; i < count; i++) {
-      const i3 = i * 3;
-      const arm = i % arms;
-      const distance = 5 + Math.random() * 80; // Distance from center
-      const angle = arm * armAngle + distance * 0.03; // Angle including spiral effect
-      
-      // Add some randomness to the spiral pattern
-      const angleOffset = (Math.random() - 0.5) * 0.6;
-      const distanceOffset = (Math.random() - 0.5) * 20;
-      
-      // Convert to Cartesian coordinates
-      positions[i3] = (distance + distanceOffset) * Math.cos(angle + angleOffset);
-      positions[i3 + 1] = (Math.random() - 0.5) * 5; // Small vertical spread
-      positions[i3 + 2] = (distance + distanceOffset) * Math.sin(angle + angleOffset);
-      
-      // Colors with gradient from center (yellowish) to edges (bluish)
-      const normalizedDistance = distance / 80;
-      colors[i3] = 0.8 - normalizedDistance * 0.5; // R: decrease toward edges
-      colors[i3 + 1] = 0.7 - normalizedDistance * 0.3; // G: decrease toward edges
-      colors[i3 + 2] = 0.6 + normalizedDistance * 0.4; // B: increase toward edges
-      
-      // Sizes, smaller toward edges
-      sizes[i] = 2 * (1 - normalizedDistance * 0.7);
-    }
-    
-    return { positions, colors, sizes };
-  }, []);
-  
   // Galaxy animation
   useFrame(({ clock }, delta) => {
     const elapsedTime = clock.getElapsedTime();
@@ -189,15 +137,95 @@ export default function GalaxyMap() {
     if (zoomOut) camera.position.y += 1;
   });
   
-  // For debugging
-  // useHelper(pointLightRef, THREE.PointLightHelper, 1);
-  
   // Update selection highlight
   useEffect(() => {
     if (hovered !== null) {
       playHit();
     }
   }, [hovered]);
+
+  // Render a single star system
+  const renderStarSystem = (system: any) => {
+    return (
+      <group key={system.id} position={system.position as any}>
+        {/* Star core */}
+        <mesh
+          onClick={() => setSelectedSystem(system.id)}
+          onPointerOver={() => setHovered(system.id)}
+          onPointerOut={() => setHovered(null)}
+        >
+          <sphereGeometry args={[
+            system.id === selectedSystem ? 0.8 : 0.5, 
+            16, 16
+          ]} />
+          <meshBasicMaterial color={system.starColor} />
+        </mesh>
+        
+        {/* Point light for each star */}
+        <pointLight
+          color={system.starColor}
+          intensity={0.8}
+          distance={10}
+        />
+        
+        {/* Star type label */}
+        <Billboard position={[0, -1, 0]}>
+          <Text
+            fontSize={0.3}
+            color={system.starColor}
+            anchorX="center"
+            anchorY="middle"
+          >
+            {system.starType}
+          </Text>
+        </Billboard>
+        
+        {/* Selection indicator */}
+        {(system.id === selectedSystem || system.id === hovered) && (
+          <group>
+            <Billboard>
+              <Text
+                fontSize={0.8}
+                color={system.id === selectedSystem ? "#00ffff" : "#ffffff"}
+                anchorX="center"
+                anchorY="middle"
+                position={[0, 2, 0]}
+                outlineWidth={0.05}
+                outlineColor="#000000"
+              >
+                {system.name}
+              </Text>
+            </Billboard>
+            
+            {/* Selection ring */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[1.5, 1.8, 32]} />
+              <meshBasicMaterial 
+                color={system.id === selectedSystem ? "#00ffff" : "#ffffff"} 
+                transparent 
+                opacity={0.6}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+          </group>
+        )}
+        
+        {/* Discovered indicator */}
+        {system.discovered && (
+          <Billboard position={[0, -2, 0]}>
+            <Text
+              fontSize={0.6}
+              color="#00ff00"
+              anchorX="center"
+              anchorY="middle"
+            >
+              DISCOVERED
+            </Text>
+          </Billboard>
+        )}
+      </group>
+    );
+  };
 
   return (
     <>
@@ -209,7 +237,13 @@ export default function GalaxyMap() {
         maxDistance={200}
       />
       
+      {/* Background starfield */}
+      {renderStarfield}
+      
+      {/* Ambient light */}
       <ambientLight intensity={0.1} />
+      
+      {/* Galaxy center light */}
       <pointLight 
         ref={pointLightRef} 
         position={[0, 0, 0]} 
@@ -217,36 +251,6 @@ export default function GalaxyMap() {
         color="#ff8f60" 
         distance={100}
       />
-      
-      {/* Background starfield */}
-      <points>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            count={starfieldParticles.positions.length / 3}
-            array={starfieldParticles.positions}
-            itemSize={3}
-          />
-          <bufferAttribute
-            attach="attributes-color"
-            count={starfieldParticles.colors.length / 3}
-            array={starfieldParticles.colors}
-            itemSize={3}
-          />
-          <bufferAttribute
-            attach="attributes-size"
-            count={starfieldParticles.sizes.length}
-            array={starfieldParticles.sizes}
-            itemSize={1}
-          />
-        </bufferGeometry>
-        <pointsMaterial
-          size={1}
-          vertexColors
-          transparent
-          sizeAttenuation
-        />
-      </points>
       
       <group ref={galaxyRef}>
         {/* Galaxy center */}
@@ -264,122 +268,8 @@ export default function GalaxyMap() {
           />
         </sprite>
         
-        {/* Spiral arms dust */}
-        <points>
-          <bufferGeometry>
-            <bufferAttribute
-              attach="attributes-position"
-              count={spiralArms.positions.length / 3}
-              array={spiralArms.positions}
-              itemSize={3}
-            />
-            <bufferAttribute
-              attach="attributes-color"
-              count={spiralArms.colors.length / 3}
-              array={spiralArms.colors}
-              itemSize={3}
-            />
-            <bufferAttribute
-              attach="attributes-size"
-              count={spiralArms.sizes.length}
-              array={spiralArms.sizes}
-              itemSize={1}
-            />
-          </bufferGeometry>
-          <pointsMaterial
-            size={1.5}
-            vertexColors
-            transparent
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-            sizeAttenuation
-          />
-        </points>
-        
         {/* Star systems */}
-        {systems.map((system) => {
-          // Parse the star color and create a bright version for glow
-          const baseColor = system.starColor;
-          
-          return (
-            <group key={system.id} position={system.position as any}>
-              {/* Star core */}
-              <mesh
-                onClick={() => setSelectedSystem(system.id)}
-                onPointerOver={() => setHovered(system.id)}
-                onPointerOut={() => setHovered(null)}
-              >
-                <sphereGeometry args={[
-                  system.id === selectedSystem ? 0.8 : 0.5, 
-                  16, 16
-                ]} />
-                <meshBasicMaterial color={baseColor} />
-              </mesh>
-              
-              {/* Star ambient light */}
-              <pointLight
-                color={baseColor}
-                intensity={0.8}
-                distance={10}
-              />
-              
-              {/* Debug label showing color (temporary) */}
-              <Billboard position={[0, -1, 0]}>
-                <Text
-                  fontSize={0.3}
-                  color={baseColor}
-                  anchorX="center"
-                  anchorY="middle"
-                >
-                  {system.starType}
-                </Text>
-              </Billboard>
-              
-              {/* Selection indicator */}
-            {(system.id === selectedSystem || system.id === hovered) && (
-              <group>
-                <Billboard>
-                  <Text
-                    fontSize={0.8}
-                    color={system.id === selectedSystem ? "#00ffff" : "#ffffff"}
-                    anchorX="center"
-                    anchorY="middle"
-                    position={[0, 2, 0]}
-                    outlineWidth={0.05}
-                    outlineColor="#000000"
-                  >
-                    {system.name}
-                  </Text>
-                </Billboard>
-                
-                {/* Ring indicator */}
-                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-                  <ringGeometry args={[1.5, 1.8, 32]} />
-                  <meshBasicMaterial 
-                    color={system.id === selectedSystem ? "#00ffff" : "#ffffff"} 
-                    transparent 
-                    opacity={0.6}
-                    side={THREE.DoubleSide}
-                  />
-                </mesh>
-              </group>
-            )}
-            
-            {/* Discovered indicator */}
-            {system.discovered && (
-              <Billboard position={[0, -1.5, 0]}>
-                <Text
-                  fontSize={0.6}
-                  color="#00ff00"
-                  anchorX="center"
-                  anchorY="middle"
-                >
-                  DISCOVERED
-                </Text>
-              </Billboard>
-            )}
-          </group>
-        ))}
+        {systems.map(renderStarSystem)}
       </group>
       
       {/* Selected system info */}
