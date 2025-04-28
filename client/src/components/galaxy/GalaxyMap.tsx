@@ -4,12 +4,11 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { 
   Text, 
   useKeyboardControls, 
-  useHelper, 
   OrbitControls,
   Billboard,
   Stars
 } from '@react-three/drei';
-import { useGalaxy } from '@/lib/stores/useGalaxy';
+import { useGalaxy, StarSystem, Planet } from '@/lib/stores/useGalaxy';
 import { usePlanet } from '@/lib/stores/usePlanet';
 import { useAudio } from '@/lib/stores/useAudio';
 
@@ -24,15 +23,29 @@ enum Controls {
 }
 
 export default function GalaxyMap() {
-  const { systems, selectedSystem, setSelectedSystem } = useGalaxy();
+  const { 
+    systems, 
+    selectedSystem, 
+    setSelectedSystem,
+    selectedPlanet,
+    setSelectedPlanet,
+    activePlanetView,
+    enterPlanetView,
+    exitPlanetView,
+    currentGalaxy,
+    hyperfuel
+  } = useGalaxy();
+  
   const { generateNewPlanet } = usePlanet();
   const { playHit, playSuccess } = useAudio();
   
-  const [hovered, setHovered] = useState<string | null>(null);
+  const [hoveredSystem, setHoveredSystem] = useState<string | null>(null);
+  const [hoveredPlanet, setHoveredPlanet] = useState<string | null>(null);
   const [galaxyRotation, setGalaxyRotation] = useState(0);
+  const [systemViewMode, setSystemViewMode] = useState(false);
   
   const galaxyRef = useRef<THREE.Group>(null);
-  const selectedRef = useRef<THREE.Mesh | null>(null);
+  const systemRef = useRef<THREE.Group>(null);
   const pointLightRef = useRef<THREE.PointLight>(null);
   
   // Get keyboard controls
@@ -45,6 +58,24 @@ export default function GalaxyMap() {
   const interact = useKeyboardControls(state => state.interact);
   
   const { camera } = useThree();
+  
+  // Get the current system
+  const currentSystem = useMemo(() => {
+    return systems.find(s => s.id === selectedSystem) || null;
+  }, [systems, selectedSystem]);
+  
+  // Get the current planet
+  const currentPlanet = useMemo(() => {
+    if (!currentSystem || !selectedPlanet) return null;
+    return currentSystem.planetList.find(p => p.id === selectedPlanet) || null;
+  }, [currentSystem, selectedPlanet]);
+  
+  // Toggle between galaxy view and system view
+  useEffect(() => {
+    if (selectedSystem && !systemViewMode) {
+      setSystemViewMode(true);
+    }
+  }, [selectedSystem]);
   
   // Highlight the selected system when it changes
   useEffect(() => {
@@ -64,9 +95,14 @@ export default function GalaxyMap() {
   
   // Handle keyboard interactions
   useEffect(() => {
-    if (interact && hovered) {
-      setSelectedSystem(hovered);
-      generateNewPlanet();
+    if (interact) {
+      if (hoveredSystem) {
+        setSelectedSystem(hoveredSystem);
+        generateNewPlanet();
+      } else if (hoveredPlanet) {
+        setSelectedPlanet(hoveredPlanet);
+        enterPlanetView();
+      }
     }
   }, [interact]);
   
@@ -113,11 +149,11 @@ export default function GalaxyMap() {
     }
   }, []);
   
-  // Galaxy animation
+  // Planet orbiting animation
   useFrame(({ clock }, delta) => {
     const elapsedTime = clock.getElapsedTime();
     
-    if (galaxyRef.current) {
+    if (galaxyRef.current && !systemViewMode) {
       // Very slow rotation of the galaxy
       setGalaxyRotation(prev => prev + delta * 0.05);
       galaxyRef.current.rotation.y = galaxyRotation;
@@ -126,6 +162,31 @@ export default function GalaxyMap() {
     if (pointLightRef.current) {
       // Subtle pulsing of the center light
       pointLightRef.current.intensity = 1.5 + Math.sin(elapsedTime * 0.5) * 0.3;
+    }
+    
+    // Animate planets orbiting around their star
+    if (systemRef.current && currentSystem) {
+      // Get all planet meshes
+      const planetMeshes = systemRef.current.children.filter(
+        child => child.userData?.isPlanet
+      );
+      
+      // Animate each planet
+      planetMeshes.forEach((planetMesh) => {
+        const { id, orbitSpeed, orbitRadius } = planetMesh.userData.planetData;
+        
+        // Create orbit animation
+        const angle = elapsedTime * orbitSpeed;
+        const x = Math.cos(angle) * orbitRadius;
+        const z = Math.sin(angle) * orbitRadius;
+        
+        // Update position
+        planetMesh.position.x = x;
+        planetMesh.position.z = z;
+        
+        // Rotate planet on its axis
+        planetMesh.rotation.y += delta * planetMesh.userData.planetData.rotationSpeed;
+      });
     }
     
     // Handle keyboard controls for camera movement
@@ -139,20 +200,26 @@ export default function GalaxyMap() {
   
   // Update selection highlight
   useEffect(() => {
-    if (hovered !== null) {
+    if (hoveredSystem !== null) {
       playHit();
     }
-  }, [hovered]);
+  }, [hoveredSystem]);
+  
+  useEffect(() => {
+    if (hoveredPlanet !== null) {
+      playHit();
+    }
+  }, [hoveredPlanet]);
 
-  // Render a single star system
-  const renderStarSystem = (system: any) => {
+  // Render a single star system in galaxy view
+  const renderStarSystem = (system: StarSystem) => {
     return (
       <group key={system.id} position={system.position as any}>
         {/* Star core */}
         <mesh
           onClick={() => setSelectedSystem(system.id)}
-          onPointerOver={() => setHovered(system.id)}
-          onPointerOut={() => setHovered(null)}
+          onPointerOver={() => setHoveredSystem(system.id)}
+          onPointerOut={() => setHoveredSystem(null)}
         >
           <sphereGeometry args={[
             system.id === selectedSystem ? 0.8 : 0.5, 
@@ -181,7 +248,7 @@ export default function GalaxyMap() {
         </Billboard>
         
         {/* Selection indicator */}
-        {(system.id === selectedSystem || system.id === hovered) && (
+        {(system.id === selectedSystem || system.id === hoveredSystem) && (
           <group>
             <Billboard>
               <Text
@@ -226,6 +293,184 @@ export default function GalaxyMap() {
       </group>
     );
   };
+  
+  // Render a planet in system view
+  const renderPlanet = (planet: Planet) => {
+    // Get planet's initial position based on orbit radius
+    const orbitAngle = Math.random() * Math.PI * 2;
+    const x = Math.cos(orbitAngle) * planet.orbitRadius;
+    const z = Math.sin(orbitAngle) * planet.orbitRadius;
+    
+    return (
+      <group 
+        key={planet.id} 
+        position={[x, planet.position[1], z]}
+        userData={{
+          isPlanet: true,
+          planetData: planet
+        }}
+      >
+        {/* Planet sphere */}
+        <mesh
+          onClick={() => {
+            setSelectedPlanet(planet.id);
+            enterPlanetView();
+          }}
+          onPointerOver={() => setHoveredPlanet(planet.id)}
+          onPointerOut={() => setHoveredPlanet(null)}
+        >
+          <sphereGeometry args={[planet.size, 32, 32]} />
+          <meshStandardMaterial 
+            color={planet.color}
+            roughness={0.7}
+            metalness={0.2}
+          />
+        </mesh>
+        
+        {/* Selection indicator */}
+        {(planet.id === selectedPlanet || planet.id === hoveredPlanet) && (
+          <group>
+            <Billboard>
+              <Text
+                fontSize={0.3}
+                color={planet.id === selectedPlanet ? "#00ffff" : "#ffffff"}
+                anchorX="center"
+                anchorY="middle"
+                position={[0, planet.size + 0.5, 0]}
+                outlineWidth={0.05}
+                outlineColor="#000000"
+              >
+                {planet.name}
+              </Text>
+              
+              <Text
+                fontSize={0.2}
+                color={planet.id === selectedPlanet ? "#88ffff" : "#cccccc"}
+                anchorX="center"
+                anchorY="middle"
+                position={[0, planet.size + 0.8, 0]}
+                outlineWidth={0.05}
+                outlineColor="#000000"
+              >
+                {planet.type}
+              </Text>
+            </Billboard>
+            
+            {/* Selection ring */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[planet.size + 0.2, planet.size + 0.3, 32]} />
+              <meshBasicMaterial 
+                color={planet.id === selectedPlanet ? "#00ffff" : "#ffffff"} 
+                transparent 
+                opacity={0.6}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+          </group>
+        )}
+        
+        {/* Planet's orbit path */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-x, -planet.position[1], -z]}>
+          <ringGeometry args={[planet.orbitRadius - 0.02, planet.orbitRadius + 0.02, 64]} />
+          <meshBasicMaterial 
+            color="#444466" 
+            transparent 
+            opacity={0.3}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+        
+        {/* Discovered indicator */}
+        {planet.discovered && (
+          <Billboard position={[0, planet.size + 1.2, 0]}>
+            <Text
+              fontSize={0.2}
+              color="#00ff00"
+              anchorX="center"
+              anchorY="middle"
+            >
+              DISCOVERED
+            </Text>
+          </Billboard>
+        )}
+      </group>
+    );
+  };
+
+  // Render system view when a system is selected
+  const renderSystemView = () => {
+    if (!currentSystem) return null;
+    
+    return (
+      <group ref={systemRef}>
+        {/* Central star */}
+        <mesh position={[0, 0, 0]}>
+          <sphereGeometry args={[1, 32, 32]} />
+          <meshBasicMaterial color={currentSystem.starColor} />
+        </mesh>
+        
+        {/* Star glow */}
+        <pointLight 
+          position={[0, 0, 0]} 
+          color={currentSystem.starColor} 
+          intensity={1.5} 
+          distance={50}
+        />
+        
+        {/* Planets */}
+        {currentSystem.planetList.map(renderPlanet)}
+        
+        {/* System info */}
+        <Billboard position={[0, 4, 0]}>
+          <Text
+            fontSize={0.5}
+            color="#ffffff"
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.05}
+            outlineColor="#000000"
+          >
+            {currentSystem.name}
+          </Text>
+          <Text
+            fontSize={0.3}
+            color="#cccccc"
+            anchorX="center"
+            anchorY="middle"
+            position={[0, -0.5, 0]}
+            outlineWidth={0.05}
+            outlineColor="#000000"
+          >
+            {currentSystem.starType}
+          </Text>
+        </Billboard>
+        
+        {/* Back to galaxy button */}
+        <Billboard position={[0, -4, 0]}>
+          <group 
+            onClick={() => {
+              setSystemViewMode(false);
+              setSelectedSystem(null);
+            }}
+            onPointerOver={() => playHit()}
+          >
+            <mesh>
+              <planeGeometry args={[3, 0.8]} />
+              <meshBasicMaterial color="#114455" />
+            </mesh>
+            <Text
+              fontSize={0.4}
+              color="#ffffff"
+              anchorX="center"
+              anchorY="middle"
+            >
+              Return to Galaxy
+            </Text>
+          </group>
+        </Billboard>
+      </group>
+    );
+  };
 
   return (
     <>
@@ -233,7 +478,7 @@ export default function GalaxyMap() {
         enablePan={true}
         enableZoom={true}
         enableRotate={true}
-        minDistance={10}
+        minDistance={2}
         maxDistance={200}
       />
       
@@ -243,99 +488,106 @@ export default function GalaxyMap() {
       {/* Ambient light */}
       <ambientLight intensity={0.1} />
       
-      {/* Galaxy center light */}
-      <pointLight 
-        ref={pointLightRef} 
-        position={[0, 0, 0]} 
-        intensity={1.5} 
-        color="#ff8f60" 
-        distance={100}
-      />
+      {/* Hyperfuel indicator */}
+      <Billboard position={[15, 15, 0]}>
+        <Text
+          fontSize={0.5}
+          color="#ffaa22"
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.05}
+          outlineColor="#000000"
+        >
+          Hyperfuel: {hyperfuel} units
+        </Text>
+      </Billboard>
       
-      <group ref={galaxyRef}>
-        {/* Galaxy center */}
-        <mesh position={[0, 0, 0]}>
-          <sphereGeometry args={[3, 32, 32]} />
-          <meshBasicMaterial color="#ffb347" />
-        </mesh>
-        
-        {/* Galaxy center glow */}
-        <sprite position={[0, 0, 0]} scale={[15, 15, 1]}>
-          <spriteMaterial
-            map={galaxyCenter}
-            transparent
-            blending={THREE.AdditiveBlending}
+      {/* Galaxy indicator */}
+      <Billboard position={[-15, 15, 0]}>
+        <Text
+          fontSize={0.5}
+          color="#22aaff"
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.05}
+          outlineColor="#000000"
+        >
+          Galaxy: {currentGalaxy.charAt(0).toUpperCase() + currentGalaxy.slice(1)}
+        </Text>
+      </Billboard>
+      
+      {systemViewMode && selectedSystem ? (
+        // System view - show selected system with planets
+        renderSystemView()
+      ) : (
+        // Galaxy view - show all star systems
+        <group ref={galaxyRef}>
+          {/* Galaxy center light */}
+          <pointLight 
+            ref={pointLightRef} 
+            position={[0, 0, 0]} 
+            intensity={1.5} 
+            color="#ff8f60" 
+            distance={100}
           />
-        </sprite>
         
-        {/* Star systems */}
-        {systems.map(renderStarSystem)}
-      </group>
-      
-      {/* Selected system info */}
-      {selectedSystem && systems.length > 0 && systems.find(s => s.id === selectedSystem) && (
-        <group position={[0, -15, 0]}>
-          <Text
-            fontSize={1.2}
-            color="#ffffff"
-            anchorX="center"
-            anchorY="middle"
-            position={[0, 0, 0]}
-            outlineWidth={0.05}
-            outlineColor="#000000"
-          >
-            {systems.find(s => s.id === selectedSystem)?.name || "Unknown System"}
-          </Text>
-          <Text
-            fontSize={0.8}
-            color="#cccccc"
-            anchorX="center"
-            anchorY="middle"
-            position={[0, -1.5, 0]}
-            outlineWidth={0.05}
-            outlineColor="#000000"
-          >
-            {systems.find(s => s.id === selectedSystem)?.starType || "Unknown Type"}
-          </Text>
-          <Text
-            fontSize={0.8}
-            color="#00ffff"
-            anchorX="center"
-            anchorY="middle"
-            position={[0, -3, 0]}
-            outlineWidth={0.05}
-            outlineColor="#000000"
-          >
-            Planets: {systems.find(s => s.id === selectedSystem)?.planets || 0}
-          </Text>
+          {/* Galaxy center */}
+          <mesh position={[0, 0, 0]}>
+            <sphereGeometry args={[3, 32, 32]} />
+            <meshBasicMaterial color="#ffb347" />
+          </mesh>
+          
+          {/* Galaxy center glow */}
+          <sprite position={[0, 0, 0]} scale={[15, 15, 1]}>
+            <spriteMaterial
+              map={galaxyCenter}
+              transparent
+              blending={THREE.AdditiveBlending}
+            />
+          </sprite>
+          
+          {/* Star systems */}
+          {systems.map(renderStarSystem)}
+          
+          {/* Galaxy instructions */}
+          <Billboard position={[0, 15, 0]}>
+            <Text
+              fontSize={0.7}
+              color="#ffffff"
+              anchorX="center"
+              anchorY="middle"
+              outlineWidth={0.05}
+              outlineColor="#000000"
+            >
+              Click on a star to view its planets
+            </Text>
+          </Billboard>
         </group>
       )}
       
-      {/* Instructions */}
-      <group position={[0, 20, 0]}>
-        <Text
-          fontSize={1}
-          color="#ffffff"
-          anchorX="center"
-          anchorY="middle"
-          position={[0, 0, 0]}
-          outlineWidth={0.05}
-          outlineColor="#000000"
+      {/* Hyperdrive mini-game button */}
+      <Billboard position={[0, -15, 0]}>
+        <group
+          onClick={() => {
+            // TODO: Open hyperdrive mini-game
+            console.log("Opening hyperdrive mini-game");
+          }}
+          onPointerOver={() => playHit()}
         >
-          Click on a star system to select it
-        </Text>
-        <Text
-          fontSize={0.8}
-          color="#cccccc"
-          anchorX="center"
-          anchorY="middle"
-          position={[0, -1.5, 0]}
-          outlineWidth={0.05}
-          outlineColor="#000000"
-        >
-          Press F to travel to selected system
-        </Text>
-      </group>
+          <mesh>
+            <planeGeometry args={[8, 1.2]} />
+            <meshBasicMaterial color="#551144" />
+          </mesh>
+          <Text
+            fontSize={0.5}
+            color="#ffaaff"
+            anchorX="center"
+            anchorY="middle"
+          >
+            Activate Hyperdrive
+          </Text>
+        </group>
+      </Billboard>
     </>
   );
 }
