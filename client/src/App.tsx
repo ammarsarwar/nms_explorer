@@ -16,6 +16,7 @@ import StarField from "./components/ui/StarField";
 import AudioControls from "./components/ui/AudioControls";
 import ResourceCatalog from "./components/resources/ResourceCatalog";
 import DiscoveryLog from "./components/discovery/DiscoveryLog";
+import HyperdriveMiniGame from "./components/minigames/HyperdriveMiniGame";
 
 // Store Providers
 import { usePlanet } from "./lib/stores/usePlanet";
@@ -48,6 +49,7 @@ function App() {
   const [showCanvas, setShowCanvas] = useState(false);
   const [activeScreen, setActiveScreen] = useState<'planet' | 'galaxy' | 'resources' | 'discovery'>('planet');
   const [isLoading, setIsLoading] = useState(true);
+  const [showHyperdrive, setShowHyperdrive] = useState(false);
   const { playBackgroundMusic } = useAudio();
   const { currentPlanet, generateNewPlanet } = usePlanet();
   const { initializeGalaxy } = useGalaxy();

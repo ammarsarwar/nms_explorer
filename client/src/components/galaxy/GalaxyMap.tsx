@@ -1070,8 +1070,7 @@ export default function GalaxyMap() {
         </group>
       </Billboard>
       
-      {/* Hyperdrive mini-game */}
-      {showHyperdrive && <HyperdriveMiniGame onClose={() => setShowHyperdrive(false)} />}
+      {/* HTML components shouldn't be inside the Three.js scene */}
     </>
   );
 }
