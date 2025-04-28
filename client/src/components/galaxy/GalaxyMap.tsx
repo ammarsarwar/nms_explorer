@@ -297,44 +297,45 @@ export default function GalaxyMap() {
         </points>
         
         {/* Star systems */}
-        {systems.map((system) => (
-          <group key={system.id} position={system.position as any}>
-            {/* Star core */}
-            <mesh
-              onClick={() => setSelectedSystem(system.id)}
-              onPointerOver={() => setHovered(system.id)}
-              onPointerOut={() => setHovered(null)}
-            >
-              <sphereGeometry args={[
-                system.id === selectedSystem ? 0.8 : 0.5, 
-                16, 16
-              ]} />
-              <meshBasicMaterial 
-                color={system.starColor}
+        {systems.map((system) => {
+          // Parse the star color and create a bright version for glow
+          const baseColor = system.starColor;
+          
+          return (
+            <group key={system.id} position={system.position as any}>
+              {/* Star core */}
+              <mesh
+                onClick={() => setSelectedSystem(system.id)}
+                onPointerOver={() => setHovered(system.id)}
+                onPointerOut={() => setHovered(null)}
+              >
+                <sphereGeometry args={[
+                  system.id === selectedSystem ? 0.8 : 0.5, 
+                  16, 16
+                ]} />
+                <meshBasicMaterial color={baseColor} />
+              </mesh>
+              
+              {/* Star ambient light */}
+              <pointLight
+                color={baseColor}
+                intensity={0.8}
+                distance={10}
               />
-            </mesh>
-            
-            {/* Star glow */}
-            <mesh>
-              <sphereGeometry args={[
-                system.id === selectedSystem ? 1.2 : 0.9,
-                16, 16
-              ]} />
-              <meshBasicMaterial
-                color={system.starColor}
-                transparent
-                opacity={0.3}
-              />
-            </mesh>
-            
-            {/* Ambient light for each star */}
-            <pointLight
-              color={system.starColor}
-              intensity={0.8}
-              distance={8}
-            />
-            
-            {/* Selection indicator */}
+              
+              {/* Debug label showing color (temporary) */}
+              <Billboard position={[0, -1, 0]}>
+                <Text
+                  fontSize={0.3}
+                  color={baseColor}
+                  anchorX="center"
+                  anchorY="middle"
+                >
+                  {system.starType}
+                </Text>
+              </Billboard>
+              
+              {/* Selection indicator */}
             {(system.id === selectedSystem || system.id === hovered) && (
               <group>
                 <Billboard>
