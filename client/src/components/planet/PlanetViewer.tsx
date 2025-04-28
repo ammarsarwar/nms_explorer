@@ -66,7 +66,7 @@ export default function PlanetViewer() {
     
     // Add noise and features based on planet type
     // Different patterns for different planet types
-    if (['Lush', 'Tropical'].includes(currentPlanet.type)) {
+    if (['Lush'].includes(currentPlanet.type)) {
       // Add landmass patterns
       ctx.fillStyle = new THREE.Color(color).offsetHSL(0, 0, 0.1).getStyle();
       for (let i = 0; i < 20; i++) {
@@ -229,7 +229,6 @@ export default function PlanetViewer() {
     // Adjust bump intensity based on planet type
     switch (currentPlanet.type) {
       case 'Lush':
-      case 'Tropical':
         bumpIntensity = 0.4; // Moderate mountains
         break;
       case 'Desert':

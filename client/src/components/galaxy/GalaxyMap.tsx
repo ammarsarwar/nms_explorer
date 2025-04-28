@@ -47,7 +47,7 @@ export default function GalaxyMap() {
   
   // Highlight the selected system when it changes
   useEffect(() => {
-    if (selectedSystem && galaxyRef.current) {
+    if (selectedSystem && galaxyRef.current && systems.length > 0) {
       const system = systems.find(s => s.id === selectedSystem);
       if (system) {
         // Move camera to look at the selected system
@@ -59,7 +59,7 @@ export default function GalaxyMap() {
         playSuccess();
       }
     }
-  }, [selectedSystem]);
+  }, [selectedSystem, systems.length]);
   
   // Handle keyboard interactions
   useEffect(() => {
@@ -309,9 +309,7 @@ export default function GalaxyMap() {
                 16, 16
               ]} />
               <meshBasicMaterial 
-                color={system.starColor} 
-                emissive={system.starColor}
-                emissiveIntensity={system.id === selectedSystem ? 2 : 1}
+                color={system.starColor}
               />
             </mesh>
             
@@ -377,7 +375,7 @@ export default function GalaxyMap() {
       </group>
       
       {/* Selected system info */}
-      {selectedSystem && (
+      {selectedSystem && systems.length > 0 && systems.find(s => s.id === selectedSystem) && (
         <group position={[0, -15, 0]}>
           <Text
             fontSize={1.2}
@@ -388,7 +386,7 @@ export default function GalaxyMap() {
             outlineWidth={0.05}
             outlineColor="#000000"
           >
-            {systems.find(s => s.id === selectedSystem)?.name}
+            {systems.find(s => s.id === selectedSystem)?.name || "Unknown System"}
           </Text>
           <Text
             fontSize={0.8}
@@ -399,7 +397,7 @@ export default function GalaxyMap() {
             outlineWidth={0.05}
             outlineColor="#000000"
           >
-            {systems.find(s => s.id === selectedSystem)?.starType}
+            {systems.find(s => s.id === selectedSystem)?.starType || "Unknown Type"}
           </Text>
           <Text
             fontSize={0.8}
@@ -410,7 +408,7 @@ export default function GalaxyMap() {
             outlineWidth={0.05}
             outlineColor="#000000"
           >
-            Planets: {systems.find(s => s.id === selectedSystem)?.planets}
+            Planets: {systems.find(s => s.id === selectedSystem)?.planets || 0}
           </Text>
         </group>
       )}
