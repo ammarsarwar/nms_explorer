@@ -262,7 +262,12 @@ export default function HyperdriveMiniGame({ onClose }: HyperdriveMiniGameProps)
                   top: `calc(${cursorPosition.y}% - 16px)`
                 }}
               >
-                <Target className={`h-8 w-8 ${targetLocked ? 'text-green-500' : 'text-blue-400'}`} />
+                {/* Custom target crosshair instead of SVG to avoid R3F errors */}
+                <div className={`relative h-8 w-8 ${targetLocked ? 'text-green-500' : 'text-blue-400'}`}>
+                  <div className="absolute top-0 left-3.5 w-1 h-8 bg-current"></div>
+                  <div className="absolute top-3.5 left-0 w-8 h-1 bg-current"></div>
+                  <div className="absolute top-2 left-2 w-4 h-4 rounded-full border-2 border-current"></div>
+                </div>
               </div>
             </div>
             

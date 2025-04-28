@@ -785,8 +785,11 @@ export default function PlanetViewer() {
           
           if (hasSpot) {
             // Special colored spots (like Jupiter's red spot)
+            // Get HSL values with a temp object
+            const hsl = { h: 0, s: 0, l: 0 };
+            baseColor.getHSL(hsl);
             const spotColor = new THREE.Color().setHSL(
-              (baseColor.getHSL({}).h + 0.5) % 1.0, 
+              (hsl.h + 0.5) % 1.0, 
               0.8, 
               0.5
             );
