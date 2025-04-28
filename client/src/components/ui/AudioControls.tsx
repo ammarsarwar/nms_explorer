@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAudio } from '@/lib/stores/useAudio';
-import { Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX, Music, Music2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { motion } from 'framer-motion';
+import { Howler } from 'howler';
 
 export default function AudioControls() {
-  const { backgroundMusic, toggleMute, isMuted } = useAudio();
-  const [volume, setVolume] = useState(0.4);
+  const { toggleMute, isMuted, playBackgroundMusic, stopBackgroundMusic, isMusicPlaying } = useAudio();
+  const [volume, setVolume] = useState(0.5);
   const [isExpanded, setIsExpanded] = useState(false);
   
   // Handle volume change
@@ -15,42 +16,23 @@ export default function AudioControls() {
     const newVolume = value[0];
     setVolume(newVolume);
     
-    if (backgroundMusic) {
-      backgroundMusic.volume = newVolume;
-    }
+    // Set global volume for all sounds
+    Howler.volume(newVolume);
   };
   
   // Toggle audio
   const handleToggleMute = () => {
     toggleMute();
-    
-    if (backgroundMusic) {
-      if (isMuted) {
-        // If currently muted, unmute and play
-        backgroundMusic.play().catch(error => {
-          console.log("Background music play prevented:", error);
-        });
-      } else {
-        // If currently playing, pause
-        backgroundMusic.pause();
-      }
-    }
   };
   
-  // Auto-start the background music when component mounts
-  useEffect(() => {
-    if (backgroundMusic && !isMuted) {
-      backgroundMusic.play().catch(error => {
-        console.log("Background music auto-play prevented:", error);
-      });
+  // Toggle background music
+  const handleToggleMusic = () => {
+    if (isMusicPlaying) {
+      stopBackgroundMusic();
+    } else {
+      playBackgroundMusic();
     }
-    
-    return () => {
-      if (backgroundMusic) {
-        backgroundMusic.pause();
-      }
-    };
-  }, [backgroundMusic]);
+  };
 
   return (
     <motion.div 
@@ -61,15 +43,29 @@ export default function AudioControls() {
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
+      {/* Sound on/off button */}
       <Button 
         variant="ghost" 
         size="icon" 
         onClick={handleToggleMute}
         className="w-10 h-10 rounded-full text-primary hover:text-primary/80 hover:bg-background/50"
+        title={isMuted ? "Unmute" : "Mute"}
       >
         {isMuted ? <VolumeX /> : <Volume2 />}
       </Button>
       
+      {/* Music on/off button */}
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        onClick={handleToggleMusic}
+        className="w-10 h-10 rounded-full text-secondary hover:text-secondary/80 hover:bg-background/50"
+        title={isMusicPlaying ? "Stop Music" : "Play Music"}
+      >
+        {isMusicPlaying ? <Music /> : <Music2 />}
+      </Button>
+      
+      {/* Volume slider */}
       {isExpanded && (
         <motion.div
           initial={{ width: 0, opacity: 0 }}

@@ -32,7 +32,7 @@ export type PlanetType =
 
 export type Biome = 
   'Verdant' | 'Tropical' | 'Scorched' | 'Irradiated' | 'Frozen' | 
-  'Lifeless' | 'Corrupted' | 'Metallic' | 'Marshy' | 'Mineral' | 'Fungal';
+  'Lifeless' | 'Corrupted' | 'Metallic' | 'Marshy' | 'Mineral' | 'Fungal' | 'Toxic';
 
 export type Atmosphere = 
   'Breathable' | 'Highly Toxic' | 'Radioactive' | 'Corrosive' | 
@@ -675,7 +675,6 @@ export class ProcGen {
     
     switch(type) {
       case 'Lush':
-      case 'Tropical':
         floraCount = 5 + Math.floor(random() * 6); // 5-10
         faunaCount = 3 + Math.floor(random() * 6); // 3-8
         break;

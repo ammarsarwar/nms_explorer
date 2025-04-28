@@ -2,10 +2,10 @@ import { create } from "zustand";
 import { Howl, Howler } from 'howler';
 
 // Load and configure sounds
-let backgroundMusic: Howl | null = null; 
-let hitSound: Howl | null = null;
-let successSound: Howl | null = null;
-let explorationSound: Howl | null = null;
+let backgroundMusic: any = null; 
+let hitSound: any = null;
+let successSound: any = null;
+let explorationSound: any = null;
 
 // Preload sounds - we'll do this outside to avoid duplicate sounds
 try {
